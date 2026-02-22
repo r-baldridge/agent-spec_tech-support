@@ -1,0 +1,497 @@
+component_type: Agent
+id: 61074bd1-45f0-4f85-a000-3e9dadc4f894
+name: expert_reviewer
+description: Expert reviewer that independently verifies diagnoses, validates remediations,
+  and produces a final quality verdict.
+metadata: {}
+inputs: []
+outputs: []
+llm_config:
+  component_type: OpenAiCompatibleConfig
+  id: de34de58-3e87-411a-9909-d0166d48c7c1
+  name: claude_reviewer
+  description: null
+  metadata: {}
+  default_generation_parameters:
+    max_tokens: 16384
+    temperature: 0.1
+  url: http://localhost:4000/v1
+  model_id: claude-sonnet-4-20250514
+  api_type: chat_completions
+  api_key: ''
+system_prompt: "You are the expert reviewer, the final quality gate for all diagnostic\
+  \ and remediation work. You operate independently from the working agents to provide\
+  \ an unbiased assessment.\n\n## Your Responsibilities\n1. **Verify diagnosis**:\
+  \ Independently verify the root cause using read-only    tools. Check that the evidence\
+  \ supports the conclusion.\n2. **Validate remediation**: Confirm the fix addresses\
+  \ the root cause, not    just the symptoms. Check for side effects.\n3. **Safety\
+  \ check**: Ensure no unsafe operations were performed without    approval. Verify\
+  \ rollback procedures exist.\n4. **Completeness check**: Ensure all aspects of the\
+  \ issue are addressed,    monitoring is in place, and documentation is updated.\n\
+  5. **Produce verdict**: Issue one of:\n   - APPROVED: Diagnosis correct, remediation\
+  \ safe and complete\n   - MODIFY: Mostly correct, minor adjustments needed (specify\
+  \ what)\n   - REWORK: Significant issues found, needs re-investigation (specify\
+  \ why)\n   - REJECTED: Diagnosis incorrect or remediation dangerous (explain)\n\n\
+  ## Verdict Format\n```\nVERDICT: [APPROVED|MODIFY|REWORK|REJECTED]\nCONFIDENCE:\
+  \ [HIGH|MEDIUM|LOW]\nRISK_RATING: [CRITICAL|HIGH|MEDIUM|LOW|NONE]\n\nDIAGNOSIS_REVIEW:\n\
+  [Your independent assessment of the root cause]\n\nREMEDIATION_REVIEW:\n[Your assessment\
+  \ of the fix and its safety]\n\nREMAINING_RISKS:\n[Any residual risks or follow-up\
+  \ actions needed]\n\nNEXT_STEPS:\n[Recommended follow-up actions]\n```\n"
+tools:
+- component_type: ServerTool
+  id: e54dfb3a-2e49-4ace-a282-a4e2672a4413
+  name: shell_read_only
+  description: Execute a read-only shell command on the target system. Limited to
+    safe, non-destructive commands such as viewing files, checking system status,
+    listing processes, and reading logs. No human approval is required.
+  metadata: {}
+  inputs:
+  - description: The read-only shell command to execute
+    title: command
+    type: string
+  - description: Working directory for command execution
+    title: working_directory
+    default: /tmp
+    type: string
+  - description: Maximum execution time in seconds
+    title: timeout_seconds
+    default: 30
+    type: integer
+  outputs:
+  - description: Standard output from the command
+    title: stdout
+    type: string
+  - description: Standard error from the command
+    title: stderr
+    type: string
+  - description: Exit code of the command (0 = success)
+    title: exit_code
+    type: integer
+  requires_confirmation: false
+- component_type: ServerTool
+  id: fa5f7e4f-7271-46c9-bc82-00e1e02baa64
+  name: knowledge_search
+  description: Search the knowledge base for documentation, runbooks, troubleshooting
+    guides, and architectural documents. Returns relevant snippets ranked by relevance.
+  metadata: {}
+  inputs:
+  - description: Natural-language search query
+    title: query
+    type: string
+  - description: Optional domain filter (e.g., 'networking', 'database', 'security')
+    title: domain
+    default: ''
+    type: string
+  - description: Maximum number of results to return
+    title: max_results
+    default: 5
+    type: integer
+  outputs:
+  - description: List of matching knowledge base entries
+    title: results
+    items:
+      title: entry
+      properties:
+        title:
+          title: title
+          type: string
+        content:
+          title: content
+          type: string
+        source:
+          title: source
+          type: string
+        relevance_score:
+          title: relevance_score
+          type: string
+      type: object
+    type: array
+  requires_confirmation: false
+- component_type: ServerTool
+  id: 02099239-e4b1-4c6e-9af6-6b7ff4cb9423
+  name: incident_history_search
+  description: Search past incident records for similar issues, including root causes,
+    resolutions, and post-mortem notes. Useful for identifying recurring problems
+    and known solutions.
+  metadata: {}
+  inputs:
+  - description: Description of the current issue to find similar past incidents
+    title: query
+    type: string
+  - description: Filter by severity level (P1, P2, P3, P4, or empty for all)
+    title: severity_filter
+    default: ''
+    type: string
+  - description: Maximum number of past incidents to return
+    title: max_results
+    default: 5
+    type: integer
+  outputs:
+  - description: List of similar past incidents
+    title: incidents
+    items:
+      title: incident
+      properties:
+        incident_id:
+          title: incident_id
+          type: string
+        title:
+          title: title
+          type: string
+        root_cause:
+          title: root_cause
+          type: string
+        resolution:
+          title: resolution
+          type: string
+        severity:
+          title: severity
+          type: string
+        date:
+          title: date
+          type: string
+      type: object
+    type: array
+  requires_confirmation: false
+- component_type: ServerTool
+  id: 470a279e-25f0-4b30-bdc6-ae846bebbb52
+  name: query_tickets
+  description: Search and query existing tickets by various criteria. Useful for finding
+    related tickets, checking status of known issues, and understanding the broader
+    context of a problem.
+  metadata: {}
+  inputs:
+  - description: Search query or ticket ID
+    title: query
+    type: string
+  - description: Filter by status (open, in_progress, resolved, closed, or empty for
+      all)
+    title: status_filter
+    default: ''
+    type: string
+  - description: Maximum number of tickets to return
+    title: max_results
+    default: 10
+    type: integer
+  outputs:
+  - description: List of matching tickets
+    title: tickets
+    items:
+      title: ticket
+      properties:
+        ticket_id:
+          title: ticket_id
+          type: string
+        title:
+          title: title
+          type: string
+        status:
+          title: status
+          type: string
+        severity:
+          title: severity
+          type: string
+        assignee:
+          title: assignee
+          type: string
+        created_at:
+          title: created_at
+          type: string
+      type: object
+    type: array
+  requires_confirmation: false
+- component_type: ServerTool
+  id: e43b77da-8b51-4678-97d4-3767348a912b
+  name: update_ticket
+  description: Add a comment, update status, or change fields on an existing ticket.
+    Use this to log diagnostic findings, status changes, and resolution notes.
+  metadata: {}
+  inputs:
+  - description: Identifier of the ticket to update
+    title: ticket_id
+    type: string
+  - description: Comment text to add to the ticket
+    title: comment
+    default: ''
+    type: string
+  - description: New status (open, in_progress, pending, resolved, closed), or empty
+      to leave unchanged
+    title: status
+    default: ''
+    type: string
+  - description: New assignee, or empty to leave unchanged
+    title: assignee
+    default: ''
+    type: string
+  outputs:
+  - description: Confirmation message or error details
+    title: result
+    type: string
+  requires_confirmation: false
+- component_type: ServerTool
+  id: bbe22c1d-cac5-4884-b76d-8678ee8f6db6
+  name: check_alerts
+  description: Check the current state of alerts from monitoring and alerting systems.
+    Returns active, firing, and recently resolved alerts with their severity and affected
+    components.
+  metadata: {}
+  inputs:
+  - description: Optional filter expression for alerts (e.g., service name, severity)
+    title: filter
+    default: ''
+    type: string
+  - description: 'Alert state filter: ''firing'', ''pending'', ''resolved'', or empty
+      for all'
+    title: state
+    default: firing
+    type: string
+  outputs:
+  - description: List of matching alerts
+    title: alerts
+    items:
+      title: alert
+      properties:
+        description:
+          title: description
+          type: string
+        alert_name:
+          title: alert_name
+          type: string
+        severity:
+          title: severity
+          type: string
+        state:
+          title: state
+          type: string
+        started_at:
+          title: started_at
+          type: string
+        labels:
+          title: labels
+          type: string
+      type: object
+    type: array
+  requires_confirmation: false
+- component_type: ServerTool
+  id: bf37a9f9-93cd-4d25-91e5-67662f199857
+  name: search_logs
+  description: Search logs across centralized logging systems (ELK, Loki, CloudWatch
+    Logs, etc.). Supports keyword search, regex patterns, and structured log queries.
+    Returns matching log entries with context.
+  metadata: {}
+  inputs:
+  - description: Log search query (keywords, regex, or provider-specific query syntax)
+    title: query
+    type: string
+  - description: Log source filter (e.g., service name, hostname, container ID)
+    title: source
+    default: ''
+    type: string
+  - description: Time range to search (e.g., '15m', '1h', '24h')
+    title: time_range
+    default: 1h
+    type: string
+  - description: 'Minimum log level filter: DEBUG, INFO, WARN, ERROR, FATAL, or empty
+      for all'
+    title: level
+    default: ''
+    type: string
+  - description: Maximum number of log entries to return
+    title: max_results
+    default: 100
+    type: integer
+  outputs:
+  - description: List of matching log entries
+    title: entries
+    items:
+      title: log_entry
+      properties:
+        timestamp:
+          title: timestamp
+          type: string
+        level:
+          title: level
+          type: string
+        source:
+          title: source
+          type: string
+        message:
+          title: message
+          type: string
+      type: object
+    type: array
+  - description: Total number of matching entries (may exceed max_results)
+    title: total_matches
+    type: integer
+  requires_confirmation: false
+- component_type: ServerTool
+  id: e1ce1578-ec9c-4108-af35-0b0f0dd8ad4c
+  name: audit_config
+  description: 'Analyze configuration files for correctness, security issues, and
+    best-practice violations. Supports common formats: YAML, JSON, TOML, INI, nginx,
+    Apache, systemd units, Kubernetes manifests, Terraform HCL, and Dockerfile.'
+  metadata: {}
+  inputs:
+  - description: Path to the configuration file or directory to audit
+    title: config_path
+    type: string
+  - description: 'Type of configuration (auto-detected if empty): yaml, json, toml,
+      ini, nginx, k8s, terraform, dockerfile, systemd'
+    title: config_type
+    default: ''
+    type: string
+  - description: 'Comma-separated categories to check: syntax, security, performance,
+      best_practices, or empty for all'
+    title: check_categories
+    default: ''
+    type: string
+  outputs:
+  - description: List of audit findings
+    title: findings
+    items:
+      title: finding
+      properties:
+        severity:
+          title: severity
+          type: string
+        category:
+          title: category
+          type: string
+        location:
+          title: location
+          type: string
+        message:
+          title: message
+          type: string
+        recommendation:
+          title: recommendation
+          type: string
+      type: object
+    type: array
+  - description: Overall audit summary and risk assessment
+    title: summary
+    type: string
+  requires_confirmation: false
+- component_type: ServerTool
+  id: bce5f6be-9bfc-4e14-92c1-8f4d7489251d
+  name: resource_monitor
+  description: Monitor system resource utilization including CPU, memory, disk, running
+    processes, and network sockets. Provides a real-time snapshot of the target system's
+    health and resource consumption.
+  metadata: {}
+  inputs:
+  - description: Hostname or IP to monitor (use 'localhost' for local system)
+    title: target_host
+    default: localhost
+    type: string
+  - description: 'Resource to monitor: cpu, memory, disk, processes, sockets, or ''all''
+      for a full report'
+    title: resource_type
+    default: all
+    type: string
+  - description: 'Sort criteria for process listing: cpu, memory, pid, name'
+    title: sort_by
+    default: cpu
+    type: string
+  outputs:
+  - description: System identification and uptime
+    title: system_info
+    properties:
+      hostname:
+        title: hostname
+        type: string
+      uptime:
+        title: uptime
+        type: string
+      kernel:
+        title: kernel
+        type: string
+    type: object
+  - description: CPU utilization summary
+    title: cpu_usage
+    type: string
+  - description: Memory utilization summary
+    title: memory_usage
+    type: string
+  - description: Disk utilization summary
+    title: disk_usage
+    type: string
+  - description: Top resource-consuming processes
+    title: top_processes
+    items:
+      title: process
+      properties:
+        name:
+          title: name
+          type: string
+        pid:
+          title: pid
+          type: string
+        cpu_percent:
+          title: cpu_percent
+          type: string
+        memory_percent:
+          title: memory_percent
+          type: string
+      type: object
+    type: array
+  - description: Active listening network sockets
+    title: listening_sockets
+    items:
+      title: socket
+      properties:
+        protocol:
+          title: protocol
+          type: string
+        address:
+          title: address
+          type: string
+        port:
+          title: port
+          type: string
+        process:
+          title: process
+          type: string
+      type: object
+    type: array
+  requires_confirmation: false
+- component_type: ServerTool
+  id: e0a44566-9c7d-4f26-b42e-a24b02358935
+  name: query_metrics
+  description: Query time-series metrics from monitoring systems (Prometheus, CloudWatch,
+    Datadog, etc.). Supports PromQL and provider-specific query languages. Returns
+    metric values with timestamps.
+  metadata: {}
+  inputs:
+  - description: Metric query (e.g., PromQL expression like 'rate(http_requests_total[5m])')
+    title: query
+    type: string
+  - description: Time range for the query (e.g., '1h', '6h', '24h', '7d')
+    title: time_range
+    default: 1h
+    type: string
+  - description: Resolution step for range queries (e.g., '15s', '1m', '5m')
+    title: step
+    default: 1m
+    type: string
+  outputs:
+  - description: List of metric time series
+    title: series
+    items:
+      title: metric_series
+      properties:
+        labels:
+          title: labels
+          type: string
+        values:
+          title: values
+          type: string
+      type: object
+    type: array
+  - description: Human-readable summary of the metric data
+    title: summary
+    type: string
+  requires_confirmation: false
+toolboxes: []
+human_in_the_loop: true
+agentspec_version: 25.4.2

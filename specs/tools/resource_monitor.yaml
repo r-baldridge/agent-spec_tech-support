@@ -1,0 +1,83 @@
+component_type: ServerTool
+id: bce5f6be-9bfc-4e14-92c1-8f4d7489251d
+name: resource_monitor
+description: Monitor system resource utilization including CPU, memory, disk, running
+  processes, and network sockets. Provides a real-time snapshot of the target system's
+  health and resource consumption.
+metadata: {}
+inputs:
+- description: Hostname or IP to monitor (use 'localhost' for local system)
+  title: target_host
+  default: localhost
+  type: string
+- description: 'Resource to monitor: cpu, memory, disk, processes, sockets, or ''all''
+    for a full report'
+  title: resource_type
+  default: all
+  type: string
+- description: 'Sort criteria for process listing: cpu, memory, pid, name'
+  title: sort_by
+  default: cpu
+  type: string
+outputs:
+- description: System identification and uptime
+  title: system_info
+  properties:
+    hostname:
+      title: hostname
+      type: string
+    uptime:
+      title: uptime
+      type: string
+    kernel:
+      title: kernel
+      type: string
+  type: object
+- description: CPU utilization summary
+  title: cpu_usage
+  type: string
+- description: Memory utilization summary
+  title: memory_usage
+  type: string
+- description: Disk utilization summary
+  title: disk_usage
+  type: string
+- description: Top resource-consuming processes
+  title: top_processes
+  items:
+    title: process
+    properties:
+      name:
+        title: name
+        type: string
+      pid:
+        title: pid
+        type: string
+      cpu_percent:
+        title: cpu_percent
+        type: string
+      memory_percent:
+        title: memory_percent
+        type: string
+    type: object
+  type: array
+- description: Active listening network sockets
+  title: listening_sockets
+  items:
+    title: socket
+    properties:
+      protocol:
+        title: protocol
+        type: string
+      address:
+        title: address
+        type: string
+      port:
+        title: port
+        type: string
+      process:
+        title: process
+        type: string
+    type: object
+  type: array
+agentspec_version: 25.4.1

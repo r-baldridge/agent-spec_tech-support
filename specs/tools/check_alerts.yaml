@@ -1,0 +1,44 @@
+component_type: ServerTool
+id: bbe22c1d-cac5-4884-b76d-8678ee8f6db6
+name: check_alerts
+description: Check the current state of alerts from monitoring and alerting systems.
+  Returns active, firing, and recently resolved alerts with their severity and affected
+  components.
+metadata: {}
+inputs:
+- description: Optional filter expression for alerts (e.g., service name, severity)
+  title: filter
+  default: ''
+  type: string
+- description: 'Alert state filter: ''firing'', ''pending'', ''resolved'', or empty
+    for all'
+  title: state
+  default: firing
+  type: string
+outputs:
+- description: List of matching alerts
+  title: alerts
+  items:
+    title: alert
+    properties:
+      description:
+        title: description
+        type: string
+      alert_name:
+        title: alert_name
+        type: string
+      severity:
+        title: severity
+        type: string
+      state:
+        title: state
+        type: string
+      started_at:
+        title: started_at
+        type: string
+      labels:
+        title: labels
+        type: string
+    type: object
+  type: array
+agentspec_version: 25.4.1

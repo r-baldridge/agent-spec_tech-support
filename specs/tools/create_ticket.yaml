@@ -1,0 +1,33 @@
+component_type: ServerTool
+id: fe98a8f8-ed85-4b14-b0df-2b10a5e982f3
+name: create_ticket
+description: Create a new support ticket in the ticketing system. Records the issue
+  description, severity, affected systems, and assigns it to the appropriate team.
+metadata: {}
+inputs:
+- description: Concise title for the ticket
+  title: title
+  type: string
+- description: Detailed description of the issue
+  title: description
+  type: string
+- description: 'Severity level: P1 (critical), P2 (high), P3 (medium), P4 (low)'
+  title: severity
+  type: string
+- description: Technical domain (networking, database, os_linux, cloud_infra, application_code,
+    security, cicd, monitoring)
+  title: domain
+  type: string
+- description: Comma-separated list of affected systems or services
+  title: affected_systems
+  default: ''
+  type: string
+outputs:
+- description: Unique identifier of the newly created ticket
+  title: ticket_id
+  type: string
+- description: URL to view the ticket
+  title: ticket_url
+  type: string
+requires_confirmation: true
+agentspec_version: 25.4.2

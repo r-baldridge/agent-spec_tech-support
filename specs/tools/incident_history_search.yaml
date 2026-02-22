@@ -1,0 +1,46 @@
+component_type: ServerTool
+id: 02099239-e4b1-4c6e-9af6-6b7ff4cb9423
+name: incident_history_search
+description: Search past incident records for similar issues, including root causes,
+  resolutions, and post-mortem notes. Useful for identifying recurring problems and
+  known solutions.
+metadata: {}
+inputs:
+- description: Description of the current issue to find similar past incidents
+  title: query
+  type: string
+- description: Filter by severity level (P1, P2, P3, P4, or empty for all)
+  title: severity_filter
+  default: ''
+  type: string
+- description: Maximum number of past incidents to return
+  title: max_results
+  default: 5
+  type: integer
+outputs:
+- description: List of similar past incidents
+  title: incidents
+  items:
+    title: incident
+    properties:
+      incident_id:
+        title: incident_id
+        type: string
+      title:
+        title: title
+        type: string
+      root_cause:
+        title: root_cause
+        type: string
+      resolution:
+        title: resolution
+        type: string
+      severity:
+        title: severity
+        type: string
+      date:
+        title: date
+        type: string
+    type: object
+  type: array
+agentspec_version: 25.4.1

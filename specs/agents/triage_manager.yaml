@@ -1,0 +1,233 @@
+component_type: Agent
+id: 5499bb91-3580-4c28-8923-fce8db67bb86
+name: triage_manager
+description: Triage manager that classifies incoming technical issues by domain and
+  severity, then delegates to the appropriate specialist.
+metadata: {}
+inputs: []
+outputs: []
+llm_config:
+  component_type: OpenAiCompatibleConfig
+  id: a361551f-c15e-43d4-82fd-445020095e6c
+  name: claude_manager
+  description: null
+  metadata: {}
+  default_generation_parameters:
+    max_tokens: 4096
+    temperature: 0.3
+  url: http://localhost:4000/v1
+  model_id: claude-sonnet-4-20250514
+  api_type: chat_completions
+  api_key: ''
+system_prompt: "You are the triage manager responsible for analyzing incoming technical\
+  \ issues and routing them to the appropriate domain specialist.\n\n## Your Responsibilities\n\
+  1. **Classify** the issue by technical domain (networking, database, os_linux, \
+  \   cloud_infra, application_code, security, cicd, monitoring).\n2. **Assess severity**\
+  \ using the P1-P4 scale:\n   - P1: Critical, production down, revenue-impacting\n\
+  \   - P2: High, major feature degraded, workaround exists\n   - P3: Medium, minor\
+  \ feature impacted, low business impact\n   - P4: Low, cosmetic or informational\n\
+  3. **Delegate** to the most appropriate specialist based on symptoms.\n4. **Monitor**\
+  \ progress and escalate when:\n   - The specialist cannot resolve within the expected\
+  \ timeframe\n   - The issue spans multiple domains (trigger swarm mode)\n   - The\
+  \ severity increases based on new findings\n5. **Create and update tickets** to\
+  \ maintain an accurate record.\n\n## Delegation Strategy\n- Single-domain issues:\
+  \ delegate to one specialist\n- Cross-domain or ambiguous: start with the primary\
+  \ domain, allow escalation\n- P1 incidents: consider swarm mode immediately\n- Unknown\
+  \ domain: start with the specialist whose tools best match the symptoms\n\n## Output\
+  \ Format\nAlways include:\n- Domain classification with confidence level\n- Severity\
+  \ assessment with justification\n- Selected specialist and rationale\n- Initial\
+  \ ticket creation if none exists\n"
+tools:
+- component_type: ServerTool
+  id: fa5f7e4f-7271-46c9-bc82-00e1e02baa64
+  name: knowledge_search
+  description: Search the knowledge base for documentation, runbooks, troubleshooting
+    guides, and architectural documents. Returns relevant snippets ranked by relevance.
+  metadata: {}
+  inputs:
+  - description: Natural-language search query
+    title: query
+    type: string
+  - description: Optional domain filter (e.g., 'networking', 'database', 'security')
+    title: domain
+    default: ''
+    type: string
+  - description: Maximum number of results to return
+    title: max_results
+    default: 5
+    type: integer
+  outputs:
+  - description: List of matching knowledge base entries
+    title: results
+    items:
+      title: entry
+      properties:
+        title:
+          title: title
+          type: string
+        content:
+          title: content
+          type: string
+        source:
+          title: source
+          type: string
+        relevance_score:
+          title: relevance_score
+          type: string
+      type: object
+    type: array
+  requires_confirmation: false
+- component_type: ServerTool
+  id: 470a279e-25f0-4b30-bdc6-ae846bebbb52
+  name: query_tickets
+  description: Search and query existing tickets by various criteria. Useful for finding
+    related tickets, checking status of known issues, and understanding the broader
+    context of a problem.
+  metadata: {}
+  inputs:
+  - description: Search query or ticket ID
+    title: query
+    type: string
+  - description: Filter by status (open, in_progress, resolved, closed, or empty for
+      all)
+    title: status_filter
+    default: ''
+    type: string
+  - description: Maximum number of tickets to return
+    title: max_results
+    default: 10
+    type: integer
+  outputs:
+  - description: List of matching tickets
+    title: tickets
+    items:
+      title: ticket
+      properties:
+        ticket_id:
+          title: ticket_id
+          type: string
+        title:
+          title: title
+          type: string
+        status:
+          title: status
+          type: string
+        severity:
+          title: severity
+          type: string
+        assignee:
+          title: assignee
+          type: string
+        created_at:
+          title: created_at
+          type: string
+      type: object
+    type: array
+  requires_confirmation: false
+- component_type: ServerTool
+  id: bbe22c1d-cac5-4884-b76d-8678ee8f6db6
+  name: check_alerts
+  description: Check the current state of alerts from monitoring and alerting systems.
+    Returns active, firing, and recently resolved alerts with their severity and affected
+    components.
+  metadata: {}
+  inputs:
+  - description: Optional filter expression for alerts (e.g., service name, severity)
+    title: filter
+    default: ''
+    type: string
+  - description: 'Alert state filter: ''firing'', ''pending'', ''resolved'', or empty
+      for all'
+    title: state
+    default: firing
+    type: string
+  outputs:
+  - description: List of matching alerts
+    title: alerts
+    items:
+      title: alert
+      properties:
+        description:
+          title: description
+          type: string
+        alert_name:
+          title: alert_name
+          type: string
+        severity:
+          title: severity
+          type: string
+        state:
+          title: state
+          type: string
+        started_at:
+          title: started_at
+          type: string
+        labels:
+          title: labels
+          type: string
+      type: object
+    type: array
+  requires_confirmation: false
+- component_type: ServerTool
+  id: fe98a8f8-ed85-4b14-b0df-2b10a5e982f3
+  name: create_ticket
+  description: Create a new support ticket in the ticketing system. Records the issue
+    description, severity, affected systems, and assigns it to the appropriate team.
+  metadata: {}
+  inputs:
+  - description: Concise title for the ticket
+    title: title
+    type: string
+  - description: Detailed description of the issue
+    title: description
+    type: string
+  - description: 'Severity level: P1 (critical), P2 (high), P3 (medium), P4 (low)'
+    title: severity
+    type: string
+  - description: Technical domain (networking, database, os_linux, cloud_infra, application_code,
+      security, cicd, monitoring)
+    title: domain
+    type: string
+  - description: Comma-separated list of affected systems or services
+    title: affected_systems
+    default: ''
+    type: string
+  outputs:
+  - description: Unique identifier of the newly created ticket
+    title: ticket_id
+    type: string
+  - description: URL to view the ticket
+    title: ticket_url
+    type: string
+  requires_confirmation: true
+- component_type: ServerTool
+  id: e43b77da-8b51-4678-97d4-3767348a912b
+  name: update_ticket
+  description: Add a comment, update status, or change fields on an existing ticket.
+    Use this to log diagnostic findings, status changes, and resolution notes.
+  metadata: {}
+  inputs:
+  - description: Identifier of the ticket to update
+    title: ticket_id
+    type: string
+  - description: Comment text to add to the ticket
+    title: comment
+    default: ''
+    type: string
+  - description: New status (open, in_progress, pending, resolved, closed), or empty
+      to leave unchanged
+    title: status
+    default: ''
+    type: string
+  - description: New assignee, or empty to leave unchanged
+    title: assignee
+    default: ''
+    type: string
+  outputs:
+  - description: Confirmation message or error details
+    title: result
+    type: string
+  requires_confirmation: false
+toolboxes: []
+human_in_the_loop: true
+agentspec_version: 25.4.2

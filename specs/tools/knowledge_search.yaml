@@ -1,0 +1,39 @@
+component_type: ServerTool
+id: fa5f7e4f-7271-46c9-bc82-00e1e02baa64
+name: knowledge_search
+description: Search the knowledge base for documentation, runbooks, troubleshooting
+  guides, and architectural documents. Returns relevant snippets ranked by relevance.
+metadata: {}
+inputs:
+- description: Natural-language search query
+  title: query
+  type: string
+- description: Optional domain filter (e.g., 'networking', 'database', 'security')
+  title: domain
+  default: ''
+  type: string
+- description: Maximum number of results to return
+  title: max_results
+  default: 5
+  type: integer
+outputs:
+- description: List of matching knowledge base entries
+  title: results
+  items:
+    title: entry
+    properties:
+      title:
+        title: title
+        type: string
+      content:
+        title: content
+        type: string
+      source:
+        title: source
+        type: string
+      relevance_score:
+        title: relevance_score
+        type: string
+    type: object
+  type: array
+agentspec_version: 25.4.1

@@ -1,0 +1,30 @@
+component_type: ServerTool
+id: 87a72f63-9b0e-418d-bcc9-6e10c4abb01f
+name: network_diagnostic
+description: Run network diagnostic tests including ping, traceroute, DNS lookups,
+  TLS certificate checks, and MTR (My Traceroute). Provides comprehensive network
+  path and connectivity analysis.
+metadata: {}
+inputs:
+- description: Target hostname, IP address, or URL to diagnose
+  title: target
+  type: string
+- description: 'Type of diagnostic: ping, traceroute, dns, tls_check, mtr, port_scan'
+  title: test_type
+  type: string
+- description: Additional test-specific options (e.g., DNS record type 'A'/'AAAA'/'MX',
+    port number for port_scan, count for ping)
+  title: options
+  default: ''
+  type: string
+outputs:
+- description: Raw output from the diagnostic test
+  title: result
+  type: string
+- description: Structured analysis of the diagnostic results
+  title: analysis
+  type: string
+- description: 'Overall status: healthy, degraded, or unreachable'
+  title: status
+  type: string
+agentspec_version: 25.4.1

@@ -1,0 +1,47 @@
+component_type: ServerTool
+id: 470a279e-25f0-4b30-bdc6-ae846bebbb52
+name: query_tickets
+description: Search and query existing tickets by various criteria. Useful for finding
+  related tickets, checking status of known issues, and understanding the broader
+  context of a problem.
+metadata: {}
+inputs:
+- description: Search query or ticket ID
+  title: query
+  type: string
+- description: Filter by status (open, in_progress, resolved, closed, or empty for
+    all)
+  title: status_filter
+  default: ''
+  type: string
+- description: Maximum number of tickets to return
+  title: max_results
+  default: 10
+  type: integer
+outputs:
+- description: List of matching tickets
+  title: tickets
+  items:
+    title: ticket
+    properties:
+      ticket_id:
+        title: ticket_id
+        type: string
+      title:
+        title: title
+        type: string
+      status:
+        title: status
+        type: string
+      severity:
+        title: severity
+        type: string
+      assignee:
+        title: assignee
+        type: string
+      created_at:
+        title: created_at
+        type: string
+    type: object
+  type: array
+agentspec_version: 25.4.1

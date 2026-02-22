@@ -1,0 +1,503 @@
+component_type: SpecializedAgent
+id: 48e7aa9b-6daf-4a83-a485-54f4ed439d28
+name: cicd_specialist
+description: Specialist in Jenkins, GitLab CI, GitHub Actions, ArgoCD, Tekton, build
+  optimization, and deployment pipelines.
+metadata: {}
+inputs: []
+outputs: []
+agent:
+  component_type: Agent
+  id: d631802d-1301-4d13-acc5-2b4a37051d59
+  name: tech_support_base_agent
+  description: Generic tech support agent with universal diagnostic methodology and
+    read-only investigation tools.
+  metadata: {}
+  inputs: []
+  outputs: []
+  llm_config:
+    component_type: OpenAiCompatibleConfig
+    id: 70409a29-f922-44ae-87f2-e3e65e1059c4
+    name: openai_specialist
+    description: null
+    metadata: {}
+    default_generation_parameters:
+      max_tokens: 8192
+      temperature: 0.2
+    url: https://api.openai.com/v1
+    model_id: gpt-4o
+    api_type: chat_completions
+    api_key: ''
+  system_prompt: 'You are a senior technical support engineer with deep expertise
+    across infrastructure, software, and operations. Your role is to diagnose, troubleshoot,
+    and resolve technical issues systematically.
+
+
+    ## Diagnostic Methodology
+
+    1. **Gather Context** - Understand the symptoms, timeline, recent changes, and
+    blast radius.
+
+    2. **Form Hypotheses** - Rank likely root causes by probability and impact.
+
+    3. **Collect Evidence** - Use tools to gather data that confirms or eliminates
+    hypotheses.
+
+    4. **Analyze** - Correlate findings across systems, logs, and metrics.
+
+    5. **Remediate** - Propose the least-disruptive fix, with rollback plan.
+
+    6. **Verify** - Confirm the fix resolved the issue and no regressions occurred.
+
+    7. **Document** - Record root cause, fix, and preventive measures in the ticket.
+
+
+    ## Communication Standards
+
+    - State your confidence level for each diagnosis: HIGH (>90%), MEDIUM (60-90%),
+    LOW (<60%).
+
+    - Always explain the *why* behind your findings, not just the *what*.
+
+    - Flag risks before taking any action; never assume destructive commands are safe.
+
+    - If uncertain, escalate rather than guess.
+
+
+    ## Safety Rules
+
+    - Never execute destructive commands without explicit human approval.
+
+    - Always verify the target system before making changes.
+
+    - Prefer read-only investigation before any write operations.
+
+    - Document all changes made for audit purposes.
+
+    '
+  tools:
+  - component_type: ServerTool
+    id: e54dfb3a-2e49-4ace-a282-a4e2672a4413
+    name: shell_read_only
+    description: Execute a read-only shell command on the target system. Limited to
+      safe, non-destructive commands such as viewing files, checking system status,
+      listing processes, and reading logs. No human approval is required.
+    metadata: {}
+    inputs:
+    - description: The read-only shell command to execute
+      title: command
+      type: string
+    - description: Working directory for command execution
+      title: working_directory
+      default: /tmp
+      type: string
+    - description: Maximum execution time in seconds
+      title: timeout_seconds
+      default: 30
+      type: integer
+    outputs:
+    - description: Standard output from the command
+      title: stdout
+      type: string
+    - description: Standard error from the command
+      title: stderr
+      type: string
+    - description: Exit code of the command (0 = success)
+      title: exit_code
+      type: integer
+    requires_confirmation: false
+  - component_type: ServerTool
+    id: fa5f7e4f-7271-46c9-bc82-00e1e02baa64
+    name: knowledge_search
+    description: Search the knowledge base for documentation, runbooks, troubleshooting
+      guides, and architectural documents. Returns relevant snippets ranked by relevance.
+    metadata: {}
+    inputs:
+    - description: Natural-language search query
+      title: query
+      type: string
+    - description: Optional domain filter (e.g., 'networking', 'database', 'security')
+      title: domain
+      default: ''
+      type: string
+    - description: Maximum number of results to return
+      title: max_results
+      default: 5
+      type: integer
+    outputs:
+    - description: List of matching knowledge base entries
+      title: results
+      items:
+        title: entry
+        properties:
+          title:
+            title: title
+            type: string
+          content:
+            title: content
+            type: string
+          source:
+            title: source
+            type: string
+          relevance_score:
+            title: relevance_score
+            type: string
+        type: object
+      type: array
+    requires_confirmation: false
+  - component_type: ServerTool
+    id: 02099239-e4b1-4c6e-9af6-6b7ff4cb9423
+    name: incident_history_search
+    description: Search past incident records for similar issues, including root causes,
+      resolutions, and post-mortem notes. Useful for identifying recurring problems
+      and known solutions.
+    metadata: {}
+    inputs:
+    - description: Description of the current issue to find similar past incidents
+      title: query
+      type: string
+    - description: Filter by severity level (P1, P2, P3, P4, or empty for all)
+      title: severity_filter
+      default: ''
+      type: string
+    - description: Maximum number of past incidents to return
+      title: max_results
+      default: 5
+      type: integer
+    outputs:
+    - description: List of similar past incidents
+      title: incidents
+      items:
+        title: incident
+        properties:
+          incident_id:
+            title: incident_id
+            type: string
+          title:
+            title: title
+            type: string
+          root_cause:
+            title: root_cause
+            type: string
+          resolution:
+            title: resolution
+            type: string
+          severity:
+            title: severity
+            type: string
+          date:
+            title: date
+            type: string
+        type: object
+      type: array
+    requires_confirmation: false
+  - component_type: ServerTool
+    id: 470a279e-25f0-4b30-bdc6-ae846bebbb52
+    name: query_tickets
+    description: Search and query existing tickets by various criteria. Useful for
+      finding related tickets, checking status of known issues, and understanding
+      the broader context of a problem.
+    metadata: {}
+    inputs:
+    - description: Search query or ticket ID
+      title: query
+      type: string
+    - description: Filter by status (open, in_progress, resolved, closed, or empty
+        for all)
+      title: status_filter
+      default: ''
+      type: string
+    - description: Maximum number of tickets to return
+      title: max_results
+      default: 10
+      type: integer
+    outputs:
+    - description: List of matching tickets
+      title: tickets
+      items:
+        title: ticket
+        properties:
+          ticket_id:
+            title: ticket_id
+            type: string
+          title:
+            title: title
+            type: string
+          status:
+            title: status
+            type: string
+          severity:
+            title: severity
+            type: string
+          assignee:
+            title: assignee
+            type: string
+          created_at:
+            title: created_at
+            type: string
+        type: object
+      type: array
+    requires_confirmation: false
+  - component_type: ServerTool
+    id: bbe22c1d-cac5-4884-b76d-8678ee8f6db6
+    name: check_alerts
+    description: Check the current state of alerts from monitoring and alerting systems.
+      Returns active, firing, and recently resolved alerts with their severity and
+      affected components.
+    metadata: {}
+    inputs:
+    - description: Optional filter expression for alerts (e.g., service name, severity)
+      title: filter
+      default: ''
+      type: string
+    - description: 'Alert state filter: ''firing'', ''pending'', ''resolved'', or
+        empty for all'
+      title: state
+      default: firing
+      type: string
+    outputs:
+    - description: List of matching alerts
+      title: alerts
+      items:
+        title: alert
+        properties:
+          description:
+            title: description
+            type: string
+          alert_name:
+            title: alert_name
+            type: string
+          severity:
+            title: severity
+            type: string
+          state:
+            title: state
+            type: string
+          started_at:
+            title: started_at
+            type: string
+          labels:
+            title: labels
+            type: string
+        type: object
+      type: array
+    requires_confirmation: false
+  - component_type: ServerTool
+    id: bf37a9f9-93cd-4d25-91e5-67662f199857
+    name: search_logs
+    description: Search logs across centralized logging systems (ELK, Loki, CloudWatch
+      Logs, etc.). Supports keyword search, regex patterns, and structured log queries.
+      Returns matching log entries with context.
+    metadata: {}
+    inputs:
+    - description: Log search query (keywords, regex, or provider-specific query syntax)
+      title: query
+      type: string
+    - description: Log source filter (e.g., service name, hostname, container ID)
+      title: source
+      default: ''
+      type: string
+    - description: Time range to search (e.g., '15m', '1h', '24h')
+      title: time_range
+      default: 1h
+      type: string
+    - description: 'Minimum log level filter: DEBUG, INFO, WARN, ERROR, FATAL, or
+        empty for all'
+      title: level
+      default: ''
+      type: string
+    - description: Maximum number of log entries to return
+      title: max_results
+      default: 100
+      type: integer
+    outputs:
+    - description: List of matching log entries
+      title: entries
+      items:
+        title: log_entry
+        properties:
+          timestamp:
+            title: timestamp
+            type: string
+          level:
+            title: level
+            type: string
+          source:
+            title: source
+            type: string
+          message:
+            title: message
+            type: string
+        type: object
+      type: array
+    - description: Total number of matching entries (may exceed max_results)
+      title: total_matches
+      type: integer
+    requires_confirmation: false
+  - component_type: ServerTool
+    id: bce5f6be-9bfc-4e14-92c1-8f4d7489251d
+    name: resource_monitor
+    description: Monitor system resource utilization including CPU, memory, disk,
+      running processes, and network sockets. Provides a real-time snapshot of the
+      target system's health and resource consumption.
+    metadata: {}
+    inputs:
+    - description: Hostname or IP to monitor (use 'localhost' for local system)
+      title: target_host
+      default: localhost
+      type: string
+    - description: 'Resource to monitor: cpu, memory, disk, processes, sockets, or
+        ''all'' for a full report'
+      title: resource_type
+      default: all
+      type: string
+    - description: 'Sort criteria for process listing: cpu, memory, pid, name'
+      title: sort_by
+      default: cpu
+      type: string
+    outputs:
+    - description: System identification and uptime
+      title: system_info
+      properties:
+        hostname:
+          title: hostname
+          type: string
+        uptime:
+          title: uptime
+          type: string
+        kernel:
+          title: kernel
+          type: string
+      type: object
+    - description: CPU utilization summary
+      title: cpu_usage
+      type: string
+    - description: Memory utilization summary
+      title: memory_usage
+      type: string
+    - description: Disk utilization summary
+      title: disk_usage
+      type: string
+    - description: Top resource-consuming processes
+      title: top_processes
+      items:
+        title: process
+        properties:
+          name:
+            title: name
+            type: string
+          pid:
+            title: pid
+            type: string
+          cpu_percent:
+            title: cpu_percent
+            type: string
+          memory_percent:
+            title: memory_percent
+            type: string
+        type: object
+      type: array
+    - description: Active listening network sockets
+      title: listening_sockets
+      items:
+        title: socket
+        properties:
+          protocol:
+            title: protocol
+            type: string
+          address:
+            title: address
+            type: string
+          port:
+            title: port
+            type: string
+          process:
+            title: process
+            type: string
+        type: object
+      type: array
+    requires_confirmation: false
+  toolboxes: []
+  human_in_the_loop: true
+agent_specialization_parameters:
+  component_type: AgentSpecializationParameters
+  id: 6f278e54-1cd7-44be-a3b8-c2da9714f084
+  name: cicd_specialization
+  description: null
+  metadata: {}
+  inputs: []
+  outputs: []
+  additional_instructions: 'You are a senior CI/CD engineer with 20+ years of build
+    systems, deployment pipelines, and release engineering expertise.
+
+
+    ## Core Expertise
+
+    - **Jenkins**: Declarative vs scripted pipelines, shared libraries, agent   provisioning
+    (EC2, Kubernetes), credential management, Blue Ocean,   pipeline-as-code, Jenkinsfile
+    best practices.
+
+    - **GitLab CI**: YAML syntax, DAG vs stages, caching strategies, runners   (shell,
+    Docker, Kubernetes), environments, review apps, auto DevOps.
+
+    - **GitHub Actions**: Workflow composition, reusable workflows, action   versioning,
+    runner groups, OIDC for cloud auth, artifact management.
+
+    - **ArgoCD**: Application syncing, sync waves, hooks (PreSync, PostSync),   health
+    checks, diff strategies, SSO integration, RBAC, ApplicationSets.
+
+    - **Tekton**: TaskRun/PipelineRun, workspace management, interceptors,   triggers,
+    CEL expressions, results passing.
+
+    - **Build optimization**: Layer caching, dependency caching, build matrix   reduction,
+    incremental builds, remote caching (Bazel, Gradle).
+
+
+    ## Diagnostic Patterns
+
+    - Flaky tests: Test isolation issues, shared state, timing dependencies,   resource
+    contention, non-deterministic ordering.
+
+    - Build failures: Dependency resolution, version conflicts, stale caches,   build
+    environment drift, disk space exhaustion.
+
+    - Deployment failures: Rollback procedures, canary analysis, blue-green   switching,
+    database migration ordering, feature flag coordination.
+
+    - Pipeline performance: Parallelization, caching hit rates, artifact sizes,   network
+    transfer bottlenecks, runner autoscaling delays.
+
+    '
+  additional_tools:
+  - component_type: ServerTool
+    id: c23e8eaf-6087-4d1c-b0e3-bcc2cfc82558
+    name: shell_execute
+    description: Execute a shell command on the target system. Write operations require
+      human approval before execution. Use this tool when you need to make changes
+      to the system, install packages, restart services, or modify files.
+    metadata: {}
+    inputs:
+    - description: The shell command to execute
+      title: command
+      type: string
+    - description: Working directory for command execution
+      title: working_directory
+      default: /tmp
+      type: string
+    - description: Maximum execution time in seconds
+      title: timeout_seconds
+      default: 60
+      type: integer
+    outputs:
+    - description: Standard output from the command
+      title: stdout
+      type: string
+    - description: Standard error from the command
+      title: stderr
+      type: string
+    - description: Exit code of the command (0 = success)
+      title: exit_code
+      type: integer
+    requires_confirmation: true
+  human_in_the_loop: null
+agentspec_version: 25.4.2

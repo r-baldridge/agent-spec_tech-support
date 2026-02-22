@@ -1,0 +1,52 @@
+component_type: ServerTool
+id: bf37a9f9-93cd-4d25-91e5-67662f199857
+name: search_logs
+description: Search logs across centralized logging systems (ELK, Loki, CloudWatch
+  Logs, etc.). Supports keyword search, regex patterns, and structured log queries.
+  Returns matching log entries with context.
+metadata: {}
+inputs:
+- description: Log search query (keywords, regex, or provider-specific query syntax)
+  title: query
+  type: string
+- description: Log source filter (e.g., service name, hostname, container ID)
+  title: source
+  default: ''
+  type: string
+- description: Time range to search (e.g., '15m', '1h', '24h')
+  title: time_range
+  default: 1h
+  type: string
+- description: 'Minimum log level filter: DEBUG, INFO, WARN, ERROR, FATAL, or empty
+    for all'
+  title: level
+  default: ''
+  type: string
+- description: Maximum number of log entries to return
+  title: max_results
+  default: 100
+  type: integer
+outputs:
+- description: List of matching log entries
+  title: entries
+  items:
+    title: log_entry
+    properties:
+      timestamp:
+        title: timestamp
+        type: string
+      level:
+        title: level
+        type: string
+      source:
+        title: source
+        type: string
+      message:
+        title: message
+        type: string
+    type: object
+  type: array
+- description: Total number of matching entries (may exceed max_results)
+  title: total_matches
+  type: integer
+agentspec_version: 25.4.1

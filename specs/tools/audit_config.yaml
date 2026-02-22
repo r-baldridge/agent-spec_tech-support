@@ -1,0 +1,48 @@
+component_type: ServerTool
+id: e1ce1578-ec9c-4108-af35-0b0f0dd8ad4c
+name: audit_config
+description: 'Analyze configuration files for correctness, security issues, and best-practice
+  violations. Supports common formats: YAML, JSON, TOML, INI, nginx, Apache, systemd
+  units, Kubernetes manifests, Terraform HCL, and Dockerfile.'
+metadata: {}
+inputs:
+- description: Path to the configuration file or directory to audit
+  title: config_path
+  type: string
+- description: 'Type of configuration (auto-detected if empty): yaml, json, toml,
+    ini, nginx, k8s, terraform, dockerfile, systemd'
+  title: config_type
+  default: ''
+  type: string
+- description: 'Comma-separated categories to check: syntax, security, performance,
+    best_practices, or empty for all'
+  title: check_categories
+  default: ''
+  type: string
+outputs:
+- description: List of audit findings
+  title: findings
+  items:
+    title: finding
+    properties:
+      severity:
+        title: severity
+        type: string
+      category:
+        title: category
+        type: string
+      location:
+        title: location
+        type: string
+      message:
+        title: message
+        type: string
+      recommendation:
+        title: recommendation
+        type: string
+    type: object
+  type: array
+- description: Overall audit summary and risk assessment
+  title: summary
+  type: string
+agentspec_version: 25.4.1

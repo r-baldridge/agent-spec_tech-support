@@ -1,0 +1,37 @@
+component_type: ServerTool
+id: e0a44566-9c7d-4f26-b42e-a24b02358935
+name: query_metrics
+description: Query time-series metrics from monitoring systems (Prometheus, CloudWatch,
+  Datadog, etc.). Supports PromQL and provider-specific query languages. Returns metric
+  values with timestamps.
+metadata: {}
+inputs:
+- description: Metric query (e.g., PromQL expression like 'rate(http_requests_total[5m])')
+  title: query
+  type: string
+- description: Time range for the query (e.g., '1h', '6h', '24h', '7d')
+  title: time_range
+  default: 1h
+  type: string
+- description: Resolution step for range queries (e.g., '15s', '1m', '5m')
+  title: step
+  default: 1m
+  type: string
+outputs:
+- description: List of metric time series
+  title: series
+  items:
+    title: metric_series
+    properties:
+      labels:
+        title: labels
+        type: string
+      values:
+        title: values
+        type: string
+    type: object
+  type: array
+- description: Human-readable summary of the metric data
+  title: summary
+  type: string
+agentspec_version: 25.4.1

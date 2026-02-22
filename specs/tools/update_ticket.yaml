@@ -1,0 +1,28 @@
+component_type: ServerTool
+id: e43b77da-8b51-4678-97d4-3767348a912b
+name: update_ticket
+description: Add a comment, update status, or change fields on an existing ticket.
+  Use this to log diagnostic findings, status changes, and resolution notes.
+metadata: {}
+inputs:
+- description: Identifier of the ticket to update
+  title: ticket_id
+  type: string
+- description: Comment text to add to the ticket
+  title: comment
+  default: ''
+  type: string
+- description: New status (open, in_progress, pending, resolved, closed), or empty
+    to leave unchanged
+  title: status
+  default: ''
+  type: string
+- description: New assignee, or empty to leave unchanged
+  title: assignee
+  default: ''
+  type: string
+outputs:
+- description: Confirmation message or error details
+  title: result
+  type: string
+agentspec_version: 25.4.1

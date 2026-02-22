@@ -1,0 +1,30 @@
+component_type: ServerTool
+id: e54dfb3a-2e49-4ace-a282-a4e2672a4413
+name: shell_read_only
+description: Execute a read-only shell command on the target system. Limited to safe,
+  non-destructive commands such as viewing files, checking system status, listing
+  processes, and reading logs. No human approval is required.
+metadata: {}
+inputs:
+- description: The read-only shell command to execute
+  title: command
+  type: string
+- description: Working directory for command execution
+  title: working_directory
+  default: /tmp
+  type: string
+- description: Maximum execution time in seconds
+  title: timeout_seconds
+  default: 30
+  type: integer
+outputs:
+- description: Standard output from the command
+  title: stdout
+  type: string
+- description: Standard error from the command
+  title: stderr
+  type: string
+- description: Exit code of the command (0 = success)
+  title: exit_code
+  type: integer
+agentspec_version: 25.4.1
